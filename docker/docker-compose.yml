@@ -1,0 +1,78 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: seek-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: seek
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - seek-network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: seek-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/seek?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - seek-network
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: seek-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    networks:
+      - seek-network
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+
+  scraping:
+    build:
+      context: ../scraping
+      dockerfile: Dockerfile
+    container_name: seek-scraping
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/seek?authSource=admin
+      BACKEND_URL: http://backend:3001/api
+    depends_on:
+      - mongodb
+      - backend
+    networks:
+      - seek-network
+    volumes:
+      - ../scraping:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:
+
+networks:
+  seek-network:
+    driver: bridge

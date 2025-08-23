@@ -1,0 +1,84 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: seek-mongodb-dev
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: seek
+    volumes:
+      - mongodb_dev_data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - seek-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/seek --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: seek-backend-dev
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - seek-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: seek-frontend-dev
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    networks:
+      - seek-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  scraping:
+    build:
+      context: ./scraping
+      dockerfile: Dockerfile.dev
+    container_name: seek-scraping-dev
+    env_file:
+      - ./scraping/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - seek-network
+    volumes:
+      - ./scraping:/app
+      - /app/node_modules
+      - /app/dist
+    restart: unless-stopped
+
+volumes:
+  mongodb_dev_data:
+
+networks:
+  seek-network:
+    driver: bridge
