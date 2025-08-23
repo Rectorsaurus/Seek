@@ -35,11 +35,47 @@ export class DataProcessor {
     retailer: IRetailer
   ): Promise<void> {
     
-    // Try to find existing product by name and brand
+    // Primary matching: Find existing product by name and retailer (most reliable for deduplication)
     let existingProduct = await Product.findOne({
       name: new RegExp(`^${scrapedProduct.name}$`, 'i'),
-      brand: new RegExp(`^${scrapedProduct.brand || ''}$`, 'i')
+      'retailers.retailerId': retailer._id
     });
+
+    // If not found and we have a specific brand (not "Unknown"), try name + brand matching
+    if (!existingProduct && scrapedProduct.brand && scrapedProduct.brand.toLowerCase() !== 'unknown') {
+      existingProduct = await Product.findOne({
+        name: new RegExp(`^${scrapedProduct.name}$`, 'i'),
+        brand: new RegExp(`^${scrapedProduct.brand}$`, 'i')
+      });
+      
+      // If found, check if this retailer already exists (avoid cross-retailer merging issues)
+      if (existingProduct) {
+        const hasThisRetailer = existingProduct.retailers.some(
+          r => r.retailerId.toString() === retailer._id?.toString()
+        );
+        if (hasThisRetailer) {
+          // Product exists with this retailer - use it
+          console.log(`Found existing product with corrected brand: ${scrapedProduct.name} (${scrapedProduct.brand})`);
+        } else {
+          // Product exists but from different retailer - this is OK, same product different store
+          existingProduct = null; // Will create new product for this retailer
+        }
+      }
+    }
+
+    // Final fallback: if brand is "Unknown", try to find existing product by name only 
+    // (this helps merge Unknown brands with known brands)
+    if (!existingProduct && scrapedProduct.brand?.toLowerCase() === 'unknown') {
+      const nameOnlyProduct = await Product.findOne({
+        name: new RegExp(`^${scrapedProduct.name}$`, 'i'),
+        'retailers.retailerId': retailer._id
+      });
+      
+      if (nameOnlyProduct) {
+        existingProduct = nameOnlyProduct;
+        console.log(`Found existing product for brand update: ${scrapedProduct.name} (${nameOnlyProduct.brand} → ${scrapedProduct.brand})`);
+      }
+    }
 
     const isNewProduct = !existingProduct;
 
@@ -141,6 +177,14 @@ export class DataProcessor {
     
     if (scrapedProduct.imageUrl && !existingProduct.imageUrl) {
       existingProduct.imageUrl = scrapedProduct.imageUrl;
+    }
+    
+    // Update brand if we have better information (e.g., "Unknown" → actual brand)
+    if (scrapedProduct.brand && 
+        scrapedProduct.brand.toLowerCase() !== 'unknown' && 
+        existingProduct.brand.toLowerCase() === 'unknown') {
+      console.log(`Updating brand: ${existingProduct.name} (${existingProduct.brand} → ${scrapedProduct.brand})`);
+      existingProduct.brand = scrapedProduct.brand;
     }
     
     // Update classification for existing products
