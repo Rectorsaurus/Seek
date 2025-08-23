@@ -1,8 +1,12 @@
 import mongoose from 'mongoose';
 import { Product, Retailer, IProduct, IRetailer, IRetailerProduct } from '../models';
 import { ScrapedProduct } from '../scrapers';
+import { AlertSystem } from './alertSystem';
+import { ProductClassifier } from './productClassifier';
 
 export class DataProcessor {
+  private static alertSystem = AlertSystem.getInstance();
+  private static classifier = ProductClassifier.getInstance();
   
   static async processScrapedProducts(
     scrapedProducts: ScrapedProduct[], 
@@ -37,7 +41,12 @@ export class DataProcessor {
       brand: new RegExp(`^${scrapedProduct.brand || ''}$`, 'i')
     });
 
+    const isNewProduct = !existingProduct;
+
     if (!existingProduct) {
+      // Classify the new product
+      const classification = this.classifier.classifyProduct(scrapedProduct);
+      
       // Create new product
       existingProduct = new Product({
         name: scrapedProduct.name,
@@ -46,6 +55,11 @@ export class DataProcessor {
         category: scrapedProduct.category || 'tinned',
         tobaccoType: this.extractTobaccoTypes(scrapedProduct.name, scrapedProduct.description),
         imageUrl: scrapedProduct.imageUrl,
+        priority: classification.priority,
+        releaseType: classification.releaseType,
+        popularityScore: classification.popularityScore,
+        searchCount: 0,
+        priceVolatility: 0,
         retailers: []
       });
     }
@@ -68,6 +82,9 @@ export class DataProcessor {
       // Update existing retailer product
       const existingRetailerProduct = existingProduct.retailers[existingRetailerIndex];
       
+      const oldPrice = existingRetailerProduct.currentPrice;
+      const oldAvailability = existingRetailerProduct.availability;
+      
       // Add to price history if price has changed
       if (existingRetailerProduct.currentPrice !== scrapedProduct.price) {
         existingRetailerProduct.priceHistory.push({
@@ -80,6 +97,15 @@ export class DataProcessor {
         if (existingRetailerProduct.priceHistory.length > 100) {
           existingRetailerProduct.priceHistory = existingRetailerProduct.priceHistory.slice(-100);
         }
+        
+        // Calculate and update price volatility
+        const priceHistory = existingRetailerProduct.priceHistory;
+        if (priceHistory.length > 1) {
+          const prices = priceHistory.map(entry => entry.price);
+          const mean = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+          const variance = prices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / prices.length;
+          existingProduct.priceVolatility = Math.sqrt(variance) / mean;
+        }
       }
 
       // Update current information
@@ -89,6 +115,20 @@ export class DataProcessor {
       existingRetailerProduct.productUrl = scrapedProduct.productUrl;
       
       existingProduct.retailers[existingRetailerIndex] = existingRetailerProduct;
+      
+      // Check for alerts on existing products
+      if (!isNewProduct) {
+        // Price change alert
+        if (oldPrice !== scrapedProduct.price) {
+          await this.alertSystem.checkPriceChange(existingProduct, oldPrice, scrapedProduct.price, retailer.name);
+        }
+        
+        // Stock change alert
+        if (oldAvailability !== scrapedProduct.availability) {
+          await this.alertSystem.checkStockChange(existingProduct, oldAvailability, scrapedProduct.availability);
+          existingProduct.lastStockChange = new Date();
+        }
+      }
     } else {
       // Add new retailer product
       existingProduct.retailers.push(newRetailerProduct);
@@ -102,9 +142,29 @@ export class DataProcessor {
     if (scrapedProduct.imageUrl && !existingProduct.imageUrl) {
       existingProduct.imageUrl = scrapedProduct.imageUrl;
     }
+    
+    // Update classification for existing products
+    if (!isNewProduct) {
+      const updatedClassification = this.classifier.classifyProduct(scrapedProduct, existingProduct);
+      const oldPriority = existingProduct.priority;
+      
+      existingProduct.priority = updatedClassification.priority;
+      existingProduct.releaseType = updatedClassification.releaseType;
+      existingProduct.popularityScore = this.classifier.updatePopularityScore(existingProduct);
+      
+      // Log priority changes
+      if (oldPriority !== updatedClassification.priority) {
+        console.log(`📈 Priority changed for ${existingProduct.name}: ${oldPriority} → ${updatedClassification.priority}`);
+      }
+    }
 
     // Save the product
     await existingProduct.save();
+    
+    // Check for new product alert
+    if (isNewProduct) {
+      await this.alertSystem.checkNewProduct(existingProduct);
+    }
   }
 
   private static extractTobaccoTypes(name: string, description?: string): string[] {

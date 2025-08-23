@@ -8,6 +8,12 @@ export interface IProduct extends Document {
   tobaccoType: string[];
   imageUrl?: string;
   retailers: IRetailerProduct[];
+  priority: 'standard' | 'popular' | 'limited_release' | 'seasonal' | 'discontinued';
+  releaseType: 'regular' | 'limited' | 'seasonal' | 'anniversary' | 'exclusive' | 'small_batch';
+  popularityScore: number;
+  searchCount: number;
+  lastStockChange?: Date;
+  priceVolatility: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,7 +94,23 @@ const ProductSchema = new Schema<IProduct>({
   },
   tobaccoType: [{ type: String, required: true }],
   imageUrl: { type: String },
-  retailers: [RetailerProductSchema]
+  retailers: [RetailerProductSchema],
+  priority: {
+    type: String,
+    enum: ['standard', 'popular', 'limited_release', 'seasonal', 'discontinued'],
+    default: 'standard',
+    index: true
+  },
+  releaseType: {
+    type: String,
+    enum: ['regular', 'limited', 'seasonal', 'anniversary', 'exclusive', 'small_batch'],
+    default: 'regular',
+    index: true
+  },
+  popularityScore: { type: Number, default: 0, index: true },
+  searchCount: { type: Number, default: 0 },
+  lastStockChange: { type: Date },
+  priceVolatility: { type: Number, default: 0 }
 }, {
   timestamps: true
 });

@@ -10,14 +10,21 @@
     "scrape": "npm run build && node dist/scraper.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["scraping", "pipe", "tobacco", "playwright"],
+  "keywords": [
+    "scraping",
+    "pipe",
+    "tobacco",
+    "playwright"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node-cron": "^3.0.11",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
     "mongoose": "^8.17.2",
+    "node-cron": "^4.2.1",
     "playwright": "^1.55.0"
   },
   "devDependencies": {

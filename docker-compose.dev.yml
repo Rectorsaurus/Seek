@@ -68,6 +68,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      backend:
+        condition: service_started
     networks:
       - seek-network
     volumes:

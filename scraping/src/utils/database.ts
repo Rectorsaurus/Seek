@@ -19,7 +19,7 @@ export class DatabaseManager {
     }
 
     try {
-      const mongoUri = uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/seek';
+      const mongoUri = uri || process.env.MONGODB_URI || 'mongodb://mongodb:27017/seek';
       await mongoose.connect(mongoUri);
       this.connected = true;
       console.log('Connected to MongoDB');
