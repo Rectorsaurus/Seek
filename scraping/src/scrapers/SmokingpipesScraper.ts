@@ -51,11 +51,11 @@ export class SmokingpipesScraper extends BaseScraper {
                 const foundElement = $element.find(nameSelector.trim());
                 name = foundElement.text().trim();
                 
-                // Debug: log suspicious long names and skip them
+                // Debug: log suspicious long names but don't skip (we'll handle in normalize method)
                 if (name.length > 100) {
                   console.log(`WARNING: Very long product name (${name.length} chars) found with selector "${nameSelector}"`);
                   console.log(`Name preview: ${name.substring(0, 100)}...`);
-                  continue; // Skip this selector and try the next one
+                  // Don't skip - let normalizeSmokingpipesProductName handle it
                 }
                 
                 if (name && name.length > 5) break; // Ensure we have a meaningful name
@@ -200,6 +200,28 @@ export class SmokingpipesScraper extends BaseScraper {
   }
 
   private normalizeSmokingpipesProductName(name: string): string {
+    // First check if this is a concatenated name (too long suggests scraping error)
+    if (name.length > 150) {
+      console.log(`WARNING: Extremely long product name detected (${name.length} chars), likely concatenated`);
+      console.log(`Name preview: ${name.substring(0, 100)}...`);
+      
+      // Try to extract the first product name from the concatenation
+      // Look for common patterns that indicate the start of a new product
+      const firstProductMatch = name.match(/^([^0-9]*?(?:mixture|blend|flake|virginia|burley|aromatic|english)[^0-9]*?)(?:\s+\d{3}[-\d]|\s+\d+g|\s+\d+oz|\s+[A-Z][a-z]+\s+[A-Z])/i);
+      if (firstProductMatch) {
+        name = firstProductMatch[1].trim();
+        console.log(`Extracted first product from concatenation: "${name}"`);
+      } else {
+        // Fallback: take first 50 characters and find last complete word
+        name = name.substring(0, 50);
+        const lastSpaceIndex = name.lastIndexOf(' ');
+        if (lastSpaceIndex > 10) {
+          name = name.substring(0, lastSpaceIndex);
+        }
+        console.log(`Fallback extraction: "${name}"`);
+      }
+    }
+    
     // First normalize using base class method
     let cleanName = this.normalizeProductName(name);
     
@@ -209,19 +231,23 @@ export class SmokingpipesScraper extends BaseScraper {
     cleanName = cleanName.replace(/\s+\d+oz\b/gi, '');
     cleanName = cleanName.replace(/\s+\d+\s?lb\b/gi, '');
     
-    // - Product codes (patterns like 003-057-0003)
+    // - Product codes (patterns like 003-057-0003, 005-443-0245, etc.)
     cleanName = cleanName.replace(/\s+\d{3}-\d{3}-\d{4}/g, '');
+    cleanName = cleanName.replace(/\s+\d{3}-\d{2,3}-\d{4}/g, '');
     
     // - Generic product codes (3+ digits followed by hyphens and more digits)
     cleanName = cleanName.replace(/\s+\d{3,}[-\d]*$/g, '');
     
-    // - Additional size patterns (175oz, 14oz, etc.)
-    cleanName = cleanName.replace(/\s+\d+oz$/gi, '');
-    cleanName = cleanName.replace(/\s+\d+g$/gi, '');
+    // - Additional size patterns at end (175oz, 14oz, etc.)
+    cleanName = cleanName.replace(/\s+\d+\.?\d*oz$/gi, '');
+    cleanName = cleanName.replace(/\s+\d+\.?\d*g$/gi, '');
     
-    // - Size indicators in parentheses or at end
+    // - Size indicators in parentheses
     cleanName = cleanName.replace(/\s*\([^)]*\d+g[^)]*\)$/gi, '');
     cleanName = cleanName.replace(/\s*\([^)]*\d+oz[^)]*\)$/gi, '');
+    
+    // - Remove trailing fractional sizes (like 1.75oz, 2.5oz)
+    cleanName = cleanName.replace(/\s+\d+\.\d+oz$/gi, '');
     
     // - Clean up multiple spaces and trim
     cleanName = cleanName.replace(/\s+/g, ' ').trim();
@@ -243,7 +269,21 @@ export class SmokingpipesScraper extends BaseScraper {
       'Escudo', '965', 'Squadron Leader', 'Nightcap', 'Early Morning'
     ];
 
+    // Special case mappings for specific products
+    const specialMappings: { [key: string]: string } = {
+      '123 mixture': 'Robert Lewis',
+      '123': 'Robert Lewis',
+      'royal comfort': 'Royal Comfort'
+    };
+
     const lowerName = name.toLowerCase();
+    
+    // Check special mappings first
+    for (const [product, brand] of Object.entries(specialMappings)) {
+      if (lowerName.includes(product)) {
+        return brand;
+      }
+    }
     
     // First try exact brand matches (case insensitive)
     for (const brand of commonBrands) {

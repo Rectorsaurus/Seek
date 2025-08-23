@@ -6,6 +6,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  paramsSerializer: {
+    // Configure axios to serialize arrays properly for Express.js
+    indexes: null, // Use `param=value1&param=value2` instead of `param[0]=value1&param[1]=value2`
+  },
 });
 
 export const productApi = {
@@ -20,16 +24,12 @@ export const productApi = {
     if (filters.minPrice !== undefined) params.minPrice = filters.minPrice;
     if (filters.maxPrice !== undefined) params.maxPrice = filters.maxPrice;
     
-    // Add array filters with proper array syntax
+    // Add array filters - axios will properly serialize arrays when passed as array values
     if (filters.availability && filters.availability.length > 0) {
-      filters.availability.forEach((avail, index) => {
-        params[`availability[${index}]`] = avail;
-      });
+      params.availability = filters.availability;
     }
     if (filters.retailers && filters.retailers.length > 0) {
-      filters.retailers.forEach((retailer, index) => {
-        params[`retailers[${index}]`] = retailer;
-      });
+      params.retailers = filters.retailers;
     }
 
     const response = await api.get('/products/search', { params });

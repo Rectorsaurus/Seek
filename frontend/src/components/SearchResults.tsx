@@ -107,7 +107,48 @@ export function SearchResults({ filters }: SearchResultsProps) {
       ) : data?.data.length === 0 ? (
         <div className="no-results">
           <h3>No products found</h3>
-          <p>Try adjusting your search criteria or filters.</p>
+          <p>We couldn't find any products matching your current filters.</p>
+          <div className="suggestions">
+            <h4>Try:</h4>
+            <ul>
+              <li>Removing some filters to broaden your search</li>
+              <li>Checking your spelling if using search terms</li>
+              <li>Using more general brand names (e.g., "Peterson" instead of "Peterson Pipe")</li>
+              <li>Selecting different availability options (some products may be temporarily out of stock)</li>
+            </ul>
+          </div>
+          <div className="filter-summary">
+            {filters.query && (
+              <span className="active-filter">
+                Search: "{filters.query}"
+              </span>
+            )}
+            {filters.brand && (
+              <span className="active-filter">
+                Brand: {filters.brand}
+              </span>
+            )}
+            {filters.category && (
+              <span className="active-filter">
+                Category: {filters.category}
+              </span>
+            )}
+            {filters.availability && filters.availability.length > 0 && (
+              <span className="active-filter">
+                Availability: {filters.availability.join(', ')}
+              </span>
+            )}
+            {filters.retailers && filters.retailers.length > 0 && (
+              <span className="active-filter">
+                Retailers: {filters.retailers.join(', ')}
+              </span>
+            )}
+            {(filters.minPrice || filters.maxPrice) && (
+              <span className="active-filter">
+                Price: ${filters.minPrice || '0'} - ${filters.maxPrice || '∞'}
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <>
@@ -126,15 +167,32 @@ export function SearchResults({ filters }: SearchResultsProps) {
               </thead>
               <tbody>
                 {data?.data.map(product => {
-                  const lowestPriceRetailer = product.retailers.reduce((min, retailer) => 
-                    retailer.availability === 'in_stock' && retailer.currentPrice < min.currentPrice ? retailer : min,
-                    product.retailers[0]
-                  );
+                  // Find the best retailer to display based on availability and price
+                  // Priority: in_stock with lowest price, then limited, then any other availability
+                  const sortedRetailers = [...product.retailers].sort((a, b) => {
+                    // First, sort by availability priority (in_stock > limited > others)
+                    const getAvailabilityPriority = (availability: string) => {
+                      switch(availability) {
+                        case 'in_stock': return 3;
+                        case 'limited': return 2; 
+                        default: return 1;
+                      }
+                    };
+                    
+                    const priorityA = getAvailabilityPriority(a.availability);
+                    const priorityB = getAvailabilityPriority(b.availability);
+                    
+                    if (priorityA !== priorityB) {
+                      return priorityB - priorityA; // Higher priority first
+                    }
+                    
+                    // If same availability, sort by price (lowest first)
+                    return a.currentPrice - b.currentPrice;
+                  });
                   
-                  const availableRetailers = product.retailers.filter(r => r.availability === 'in_stock');
-                  const displayPrice = lowestPriceRetailer.availability === 'in_stock' 
-                    ? `$${lowestPriceRetailer.currentPrice.toFixed(2)}`
-                    : 'N/A';
+                  const displayRetailer = sortedRetailers[0];
+                  const inStockRetailers = product.retailers.filter(r => r.availability === 'in_stock');
+                  const displayPrice = displayRetailer ? `$${displayRetailer.currentPrice.toFixed(2)}` : 'N/A';
 
                   return (
                     <tr key={product._id}>
@@ -162,20 +220,25 @@ export function SearchResults({ filters }: SearchResultsProps) {
                       <td>
                         <div className="retailer-info">
                           <div className="retailer-name">
-                            {lowestPriceRetailer.retailerId.name.length > 15 
-                              ? `${lowestPriceRetailer.retailerId.name.substring(0, 15)}...` 
-                              : lowestPriceRetailer.retailerId.name}
+                            {displayRetailer.retailerId.name.length > 15 
+                              ? `${displayRetailer.retailerId.name.substring(0, 15)}...` 
+                              : displayRetailer.retailerId.name}
                           </div>
-                          {availableRetailers.length > 1 && (
+                          {inStockRetailers.length > 1 && (
                             <div className="retailer-count">
-                              +{availableRetailers.length - 1} more
+                              +{inStockRetailers.length - 1} more in stock
+                            </div>
+                          )}
+                          {product.retailers.length > inStockRetailers.length && inStockRetailers.length === 0 && (
+                            <div className="retailer-count">
+                              +{product.retailers.length - 1} more retailers
                             </div>
                           )}
                         </div>
                       </td>
                       <td>
-                        <span className={`availability-badge availability-${lowestPriceRetailer.availability}`}>
-                          {lowestPriceRetailer.availability.replace('_', ' ')}
+                        <span className={`availability-badge availability-${displayRetailer.availability}`}>
+                          {displayRetailer.availability.replace('_', ' ')}
                         </span>
                       </td>
                       <td>
