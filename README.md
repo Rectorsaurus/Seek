@@ -433,9 +433,73 @@ make setup
 - [deployment-guide.md](deployment-guide.md) - Production deployment
 - `make help` - All available commands
 
-## Production Deployment
+## 🚀 Production Deployment
 
-For production deployment instructions, see [deployment-guide.md](deployment-guide.md).
+### Quick Production Setup
+
+**⚠️ SECURITY WARNING: The current development configuration has hardcoded passwords and is NOT production-ready. Follow these steps for secure deployment.**
+
+1. **Run the automated production setup:**
+   ```bash
+   ./scripts/deploy-production.sh
+   ```
+
+2. **Manual production setup (if preferred):**
+   ```bash
+   # 1. Configure environment
+   cp .env.production .env.production.local
+   # Edit .env.production.local with your secure credentials
+   
+   # 2. Update domain in configurations
+   sed -i 's/your-domain.com/yourdomain.com/g' docker/nginx.conf
+   sed -i 's/your-domain.com/yourdomain.com/g' docker-compose.prod.yml
+   
+   # 3. Setup SSL certificates (Let's Encrypt)
+   sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
+   
+   # 4. Deploy with security
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+### 🛡️ Security Features Implemented
+
+- **HTTPS/SSL**: Automatic Let's Encrypt SSL certificates
+- **Reverse Proxy**: Nginx with security headers and rate limiting  
+- **Database Security**: MongoDB authentication, no external port exposure
+- **CORS Protection**: Domain-specific CORS configuration
+- **Security Headers**: CSP, HSTS, XSS protection
+- **Input Validation**: Request size limits and sanitization
+- **Secrets Management**: Environment-based credential management
+
+### 📋 Production Checklist
+
+- [ ] Domain DNS configured to point to your server
+- [ ] SSL certificates installed and verified
+- [ ] Database credentials changed from defaults
+- [ ] CORS origins configured for your domain
+- [ ] Rate limiting tested and configured
+- [ ] Backup strategy implemented
+- [ ] Monitoring and logging configured
+- [ ] Firewall rules configured (ports 80, 443 only)
+
+### 🔧 Production Commands
+
+| Command | Description |
+|---------|-------------|
+| `./scripts/deploy-production.sh` | **🚀 Complete secure production setup** |
+| `docker-compose -f docker-compose.prod.yml up -d` | Start production services |
+| `docker-compose -f docker-compose.prod.yml down` | Stop production services |
+| `docker-compose -f docker-compose.prod.yml logs -f` | View production logs |
+| `./scripts/backup-production.sh` | Create database backup |
+
+### 📊 Monitoring
+
+- **Application**: https://yourdomain.com
+- **API Health**: https://yourdomain.com/api/health
+- **SSL Status**: Check certificate expiration
+- **Logs**: `docker-compose -f docker-compose.prod.yml logs -f`
+
+For detailed deployment instructions, see [deployment-guide.md](deployment-guide.md).
 
 ## Contributing
 

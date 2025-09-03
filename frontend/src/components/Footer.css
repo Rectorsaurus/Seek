@@ -1,0 +1,135 @@
+.footer {
+  background: linear-gradient(135deg, #2d5016 0%, #1a3c0f 100%);
+  color: #f4f1e8;
+  margin-top: auto;
+  padding: 2rem 0 1rem;
+  border-top: 3px solid #cd853f;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section h4 {
+  color: #deb887;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer-section p {
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #e8dcc0;
+}
+
+.footer-section p:last-child {
+  margin-bottom: 0;
+}
+
+.footer-section p strong {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+  color: #deb887;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.footer-section a:hover {
+  color: #f4e4bc;
+  text-decoration: underline;
+}
+
+.age-verification-reset {
+  background: none;
+  border: 1px solid #cd853f;
+  color: #deb887;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.age-verification-reset:hover {
+  background: #cd853f;
+  color: #1a3c0f;
+  border-color: #deb887;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(222, 184, 135, 0.3);
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-size: 0.8rem;
+  color: #d2b48c;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.footer-bottom p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 1.5rem 0 1rem;
+  }
+  
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .footer-section {
+    text-align: center;
+  }
+  
+  .footer-section h4 {
+    font-size: 1rem;
+  }
+  
+  .footer-section p,
+  .footer-section a {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .footer {
+    padding: 1rem 0;
+  }
+  
+  .footer-content {
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .age-verification-reset {
+    width: 100%;
+    max-width: 200px;
+  }
+}

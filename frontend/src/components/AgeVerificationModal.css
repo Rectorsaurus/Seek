@@ -1,0 +1,120 @@
+.age-verification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+.age-verification-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.age-verification-content {
+  padding: 32px;
+  text-align: center;
+}
+
+.age-verification-content h2 {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.age-verification-text {
+  margin-bottom: 32px;
+}
+
+.age-verification-text p {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.age-verification-text .disclaimer {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #92400e;
+}
+
+.age-verification-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.age-verification-buttons button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 140px;
+}
+
+.btn-verify {
+  background-color: #059669;
+  color: white;
+}
+
+.btn-verify:hover {
+  background-color: #047857;
+}
+
+.btn-reject {
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn-reject:hover {
+  background-color: #b91c1c;
+}
+
+.legal-notice {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.legal-notice p {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .age-verification-content {
+    padding: 24px;
+  }
+  
+  .age-verification-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .age-verification-buttons button {
+    width: 100%;
+    max-width: 200px;
+  }
+}

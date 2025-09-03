@@ -1,0 +1,101 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: seek-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - /etc/letsencrypt/live/your-domain.com:/etc/ssl/certs:ro
+      - /etc/letsencrypt/live/your-domain.com:/etc/ssl/private:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - seek-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: seek-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: seek
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./docker/mongod.conf:/etc/mongo/mongod.conf:ro
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf"]
+    networks:
+      - seek-network
+    # Remove port mapping for security - only accessible internally
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --host localhost --authenticationDatabase admin -u ${MONGO_ROOT_USER} -p ${MONGO_ROOT_PASSWORD} --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: seek-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/seek?authSource=admin
+      CORS_ORIGIN: https://your-domain.com
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      SESSION_SECRET: ${SESSION_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - seek-network
+    # Remove port mapping - only accessible through nginx
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://your-domain.com/api
+    container_name: seek-frontend
+    restart: unless-stopped
+    networks:
+      - seek-network
+    # Static files served by nginx
+
+  scraping:
+    build:
+      context: ./scraping
+      dockerfile: Dockerfile
+    container_name: seek-scraping
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/seek?authSource=admin
+      BACKEND_URL: http://backend:3001/api
+      SCRAPING_DELAY: ${SCRAPING_DELAY:-2000}
+      SCRAPING_TIMEOUT: ${SCRAPING_TIMEOUT:-30000}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - seek-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  seek-network:
+    driver: bridge
