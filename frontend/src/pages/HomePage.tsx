@@ -4,7 +4,7 @@ import { useRetailers } from '../hooks/useRetailers';
 import { SearchBar } from '../components/SearchBar';
 
 export function HomePage() {
-  const { data: featuredData, isLoading } = useFeaturedProducts();
+  const { data: featuredData } = useFeaturedProducts();
   const { data: retailersData } = useRetailers();
   
   const featuredProducts = featuredData?.data || [];

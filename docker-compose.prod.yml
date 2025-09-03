@@ -93,8 +93,42 @@ services:
     networks:
       - seek-network
 
+  goatcounter-db:
+    image: postgres:15
+    container_name: seek-goatcounter-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: goatcounter
+      POSTGRES_USER: goatcounter
+      POSTGRES_PASSWORD: ${GOATCOUNTER_DB_PASSWORD}
+    volumes:
+      - goatcounter_db_data:/var/lib/postgresql/data
+    networks:
+      - seek-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goatcounter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  goatcounter:
+    image: ghcr.io/arp242/goatcounter:latest
+    container_name: seek-goatcounter
+    restart: unless-stopped
+    environment:
+      GOATCOUNTER_DB: postgresql://goatcounter:${GOATCOUNTER_DB_PASSWORD}@goatcounter-db:5432/goatcounter?sslmode=disable
+      GOATCOUNTER_LISTEN: :8080
+      GOATCOUNTER_DOMAIN: ${GOATCOUNTER_DOMAIN:-your-domain.com}
+    depends_on:
+      goatcounter-db:
+        condition: service_healthy
+    networks:
+      - seek-network
+    command: ["serve", "-listen", ":8080", "-db", "postgresql://goatcounter:${GOATCOUNTER_DB_PASSWORD}@goatcounter-db:5432/goatcounter?sslmode=disable"]
+
 volumes:
   mongodb_data:
+  goatcounter_db_data:
 
 networks:
   seek-network:

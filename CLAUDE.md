@@ -26,6 +26,15 @@ This project was created with Claude Code to build a comprehensive pipe tobacco 
 - **View recent alerts**: `make scrape-alerts`
 - **Monitor priority products**: `make scrape-monitor`
 
+## Analytics Commands
+
+### GoatCounter Setup
+- **Set up analytics**: `make analytics-setup`
+- **Start analytics services**: `make analytics-start`
+- **Stop analytics services**: `make analytics-stop`
+- **View analytics logs**: `make analytics-logs`
+- **Reset analytics database**: `make analytics-reset`
+
 ## Project Structure
 
 ```
@@ -42,6 +51,7 @@ This project was created with Claude Code to build a comprehensive pipe tobacco 
 - **Backend**: REST API (Port 3001)
 - **Frontend**: React SPA (Port 5173 in dev, 3000 in prod)
 - **Database**: MongoDB (Port 27017)
+- **Analytics**: GoatCounter with PostgreSQL (Port 8080)
 - **Scraping**: Advanced background service with intelligent scheduling and limited release detection
 
 ## URLs
@@ -49,6 +59,8 @@ This project was created with Claude Code to build a comprehensive pipe tobacco 
 - Frontend: http://localhost:5173 (dev) / http://localhost:3000 (prod)
 - Backend API: http://localhost:3001/api
 - API Health: http://localhost:3001/api/health
+- Analytics Dashboard: http://localhost:8080 (GoatCounter)
+- Analytics API: http://localhost:3001/api/analytics
 
 ## Architecture
 
@@ -94,6 +106,15 @@ This project was created with Claude Code to build a comprehensive pipe tobacco 
 - **Change Detection**: Only processes pages with actual content changes
 - **Business Hours Awareness**: Increased delays during retailer peak times
 - **Human-like Behavior**: Randomized user agents and request patterns
+
+### 📊 Comprehensive Analytics System
+- **Privacy-First Tracking**: GoatCounter analytics with no personal data collection
+- **Retailer Click-Through Reports**: Detailed performance metrics for each retailer
+- **Product Engagement Analytics**: Track most viewed products and conversion rates
+- **Search Query Analytics**: Monitor popular search terms and user behavior
+- **Real-Time Dashboard**: Interactive analytics dashboard with date filtering
+- **CSV Export Functionality**: Export all analytics data for external analysis
+- **Conversion Tracking**: Monitor clicks from product views to retailer purchases
 
 ## Core Features
 

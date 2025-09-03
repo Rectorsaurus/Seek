@@ -11,6 +11,7 @@ export function Header() {
         <nav className="nav">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/search" className="nav-link">Search</Link>
+          <Link to="/analytics" className="nav-link">Analytics</Link>
         </nav>
       </div>
     </header>

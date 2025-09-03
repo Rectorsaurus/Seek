@@ -45,6 +45,8 @@ export interface SearchFilters {
   maxPrice?: number;
   availability?: string[];
   retailers?: string[];
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface ApiResponse<T> {

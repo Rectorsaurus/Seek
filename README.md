@@ -10,12 +10,14 @@ A real-time price comparison website for pipe tobacco from multiple retailers. C
 📱 **Responsive Design** - Works perfectly on desktop, tablet, and mobile
 🤖 **Automated Scraping** - Keeps prices updated automatically
 🏪 **Multi-Retailer Support** - Easy to add new retailers
+📈 **Advanced Analytics** - GoatCounter integration for retailer click-through tracking and user behavior analysis
 
 ## Architecture
 
 - **Backend**: Node.js + Express + TypeScript
 - **Frontend**: React + Vite + TypeScript  
 - **Database**: MongoDB with full-text search
+- **Analytics**: GoatCounter with PostgreSQL for privacy-first tracking
 - **Scraping**: Playwright + Cheerio for robust web scraping
 - **Deployment**: Docker containers optimized for M4 Mac Mini
 
@@ -96,6 +98,8 @@ After startup:
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3001
 - **API Health**: http://localhost:3001/api/health
+- **Analytics Dashboard**: http://localhost:8080 (GoatCounter)
+- **Analytics API**: http://localhost:3001/api/analytics
 
 ## Development Commands
 
@@ -112,6 +116,9 @@ After startup:
 | `make lint` | Run linting |
 | `make scrape-all` | Run all scrapers |
 | `make scrape-stats` | View scraping statistics |
+| `make analytics-setup` | Set up GoatCounter analytics |
+| `make analytics-start` | Start analytics services |
+| `make analytics-logs` | View analytics logs |
 | `make help` | Show all available commands |
 
 ## Project Structure
@@ -333,6 +340,246 @@ SCRAPING_TIMEOUT=30000
 - `GET /api/retailers` - Get all active retailers
 - `GET /api/retailers/:id` - Get specific retailer
 - `GET /api/retailers/:id/stats` - Get retailer statistics
+
+### Analytics
+- `GET /api/analytics/overview` - Get overview statistics (views, clicks, conversion rates)
+- `GET /api/analytics/retailer-clicks` - Get retailer click-through analytics with date filtering
+- `GET /api/analytics/products` - Get product engagement analytics (views, clicks, conversion rates)
+- `GET /api/analytics/search` - Get search query analytics and popular terms
+- `GET /api/analytics/export` - Export analytics data as CSV or JSON
+
+## 📊 Analytics & Reporting with GoatCounter
+
+Seek includes comprehensive analytics powered by GoatCounter, providing privacy-first tracking of user behavior and retailer click-through performance.
+
+### 🚀 Setting Up Analytics
+
+#### Quick Setup
+```bash
+# Set up analytics (includes GoatCounter configuration)
+make analytics-setup
+
+# Start full environment with analytics
+make dev
+```
+
+#### Manual Analytics Setup
+```bash
+# 1. Start analytics services
+make analytics-start
+
+# 2. Visit GoatCounter dashboard
+open http://localhost:8080
+
+# 3. Create your first site with code 'seek-tobacco'
+# 4. Copy API key from settings
+# 5. Update environment variables in .env files
+```
+
+### 📈 Generating Reports
+
+#### 1. **Retailer Click-Through Reports**
+
+Track which retailers are performing best and driving the most clicks from your platform.
+
+**Via Web Dashboard:**
+- Visit `http://localhost:5173/analytics`
+- Select "Retailer Performance" tab
+- Choose date range (Last 7 days, 30 days, 90 days, or custom)
+- Export to CSV for external analysis
+
+**Via API:**
+```bash
+# Get retailer click-through data for last 30 days
+curl "http://localhost:3001/api/analytics/retailer-clicks?startDate=2025-01-01&endDate=2025-01-31"
+
+# Filter by specific retailer
+curl "http://localhost:3001/api/analytics/retailer-clicks?retailer=Smokingpipes&limit=10"
+
+# Export as CSV
+curl "http://localhost:3001/api/analytics/export?type=retailer_clicks&format=csv&startDate=2025-01-01" \
+     -H "Accept: text/csv" > retailer_report.csv
+```
+
+**Report includes:**
+- Total clicks per retailer
+- Click-through conversion rates
+- Top performing products per retailer
+- Performance trends over time
+- Revenue attribution (if integrated)
+
+#### 2. **Product Engagement Analytics**
+
+Understand which products generate the most interest and conversion.
+
+**Via Web Dashboard:**
+- Visit `http://localhost:5173/analytics`
+- Select "Product Analytics" tab
+- Filter by brand, category, or specific products
+- View engagement metrics and export data
+
+**Via API:**
+```bash
+# Get product analytics with views and clicks
+curl "http://localhost:3001/api/analytics/products?startDate=2025-01-01&limit=25"
+
+# Filter by specific product
+curl "http://localhost:3001/api/analytics/products?product=PRODUCT_ID"
+
+# Export product data
+curl "http://localhost:3001/api/analytics/export?type=product_analytics&format=csv" > products.csv
+```
+
+**Report includes:**
+- Product view counts
+- Click-through rates to retailers  
+- Conversion rates (views → clicks)
+- Brand performance analysis
+- Category engagement metrics
+
+#### 3. **Search Query Analytics**
+
+Monitor what users are searching for to optimize inventory and content.
+
+**Via Web Dashboard:**
+- Visit `http://localhost:5173/analytics`
+- Select "Search Analytics" tab
+- View popular search terms and trends
+- Identify search patterns and opportunities
+
+**Via API:**
+```bash
+# Get popular search queries
+curl "http://localhost:3001/api/analytics/search?limit=50"
+
+# Export search data
+curl "http://localhost:3001/api/analytics/export?type=search_analytics&format=csv" > searches.csv
+```
+
+**Report includes:**
+- Popular search terms
+- Search frequency trends
+- Zero-result searches (improvement opportunities)
+- Search-to-click conversion rates
+
+#### 4. **Overview & KPI Dashboard**
+
+Get high-level metrics and key performance indicators.
+
+**Via Web Dashboard:**
+- Visit `http://localhost:5173/analytics` (Overview tab)
+- View real-time metrics and trends
+- Monitor overall platform performance
+
+**Via API:**
+```bash
+# Get overview statistics
+curl "http://localhost:3001/api/analytics/overview"
+
+# Get overview for specific date range
+curl "http://localhost:3001/api/analytics/overview?startDate=2025-01-01&endDate=2025-01-31"
+```
+
+**Dashboard includes:**
+- Total page views and unique visitors
+- Total retailer clicks and conversions
+- Overall conversion rate (views → clicks)
+- Search volume and engagement metrics
+- Top performing retailers and products
+
+### 📋 Advanced Reporting Features
+
+#### Date Range Filtering
+All analytics endpoints support flexible date filtering:
+```bash
+# Specific date range
+?startDate=2025-01-01&endDate=2025-01-31
+
+# Common presets available in web dashboard:
+# - Last 7 days
+# - Last 30 days  
+# - Last 90 days
+# - Custom date range
+```
+
+#### Data Export Options
+Export data for external analysis:
+```bash
+# CSV format (default)
+curl "...&format=csv" > report.csv
+
+# JSON format for programmatic use
+curl "...&format=json" > report.json
+```
+
+#### API Parameters
+Common parameters across all analytics endpoints:
+- `startDate` - Filter results from this date (YYYY-MM-DD)
+- `endDate` - Filter results to this date (YYYY-MM-DD)  
+- `limit` - Maximum number of results (default: 50)
+- `retailer` - Filter by specific retailer name
+- `product` - Filter by specific product ID
+
+### 🔐 Privacy & Compliance
+
+GoatCounter is designed with privacy first:
+- **No cookies or personal data tracking**
+- **GDPR compliant by design**
+- **No cross-site tracking**
+- **Respects Do Not Track headers**
+- **Open source and transparent**
+
+All analytics focus on aggregate behavior patterns rather than individual user tracking.
+
+### 📊 Business Intelligence Integration
+
+The analytics API can be integrated with business intelligence tools:
+
+**Power BI / Tableau:**
+- Use the JSON API endpoints as data sources
+- Set up automated data refreshes
+- Create custom dashboards and visualizations
+
+**Google Sheets:**
+- Import CSV exports for analysis
+- Use Google Apps Script to automate data fetching
+- Create charts and pivot tables
+
+**Custom Reporting:**
+- Build custom reports using the REST API
+- Integrate with existing business systems
+- Create automated email reports
+
+### 🛠️ Analytics Maintenance
+
+#### Regular Tasks
+```bash
+# Check analytics service health
+curl http://localhost:8080/api/v0/health
+
+# View analytics service logs
+make analytics-logs
+
+# Restart analytics if needed
+make analytics-stop && make analytics-start
+```
+
+#### Database Maintenance
+```bash
+# Check GoatCounter database size
+docker exec seek-goatcounter-db-dev psql -U goatcounter -d goatcounter -c "SELECT pg_size_pretty(pg_database_size('goatcounter'));"
+
+# Reset analytics database (WARNING: deletes all data)
+make analytics-reset
+```
+
+### 📈 Scaling Analytics
+
+For high-traffic sites:
+- GoatCounter can handle millions of page views
+- PostgreSQL database scales well with proper indexing
+- Consider read replicas for heavy reporting workloads
+- Use connection pooling for high-volume API access
 
 ## Troubleshooting
 

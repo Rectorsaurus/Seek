@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pagination } from './Pagination';
-import { Product, SearchFilters } from '../types';
+import { SearchFilters } from '../types';
 import { useProducts } from '../hooks/useProducts';
 
 interface SearchResultsProps {
@@ -220,9 +220,13 @@ export function SearchResults({ filters }: SearchResultsProps) {
                       <td>
                         <div className="retailer-info">
                           <div className="retailer-name">
-                            {displayRetailer.retailerId.name.length > 15 
-                              ? `${displayRetailer.retailerId.name.substring(0, 15)}...` 
-                              : displayRetailer.retailerId.name}
+                            {typeof displayRetailer.retailerId === 'object' ? (
+                              displayRetailer.retailerId.name.length > 15 
+                                ? `${displayRetailer.retailerId.name.substring(0, 15)}...` 
+                                : displayRetailer.retailerId.name
+                            ) : (
+                              displayRetailer.retailerName || 'Unknown Retailer'
+                            )}
                           </div>
                           {inStockRetailers.length > 1 && (
                             <div className="retailer-count">

@@ -1,10 +1,14 @@
+import React from 'react';
 import { Product } from '../types';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 interface PriceComparisonProps {
   product: Product;
 }
 
 export function PriceComparison({ product }: PriceComparisonProps) {
+  const { trackRetailerClick, trackPriceComparison } = useAnalytics();
+  
   // Use allRetailers if available (from product detail page), otherwise use retailers
   const retailers = product.allRetailers || product.retailers;
   
@@ -15,20 +19,24 @@ export function PriceComparison({ product }: PriceComparisonProps) {
     return a.currentPrice - b.currentPrice;
   });
 
-  const getAvailabilityColor = (availability: string) => {
-    switch (availability) {
-      case 'in_stock':
-        return 'text-green-600';
-      case 'limited':
-        return 'text-yellow-600';
-      case 'out_of_stock':
-        return 'text-red-600';
-      case 'discontinued':
-        return 'text-gray-600';
-      default:
-        return 'text-gray-600';
+  // Track price comparison view
+  React.useEffect(() => {
+    if (sortedRetailers.length > 0) {
+      trackPriceComparison(product._id, sortedRetailers.length);
     }
+  }, [product._id, sortedRetailers.length, trackPriceComparison]);
+
+  const handleRetailerClick = (retailerProduct: any) => {
+    trackRetailerClick({
+      productId: product._id,
+      productName: product.name,
+      retailerName: typeof retailerProduct.retailerId === 'object' ? retailerProduct.retailerId.name : retailerProduct.retailerName || 'Unknown Retailer',
+      retailerUrl: retailerProduct.productUrl,
+      price: retailerProduct.currentPrice,
+      availability: retailerProduct.availability
+    });
   };
+
 
   const getAvailabilityText = (availability: string) => {
     switch (availability) {
@@ -75,7 +83,7 @@ export function PriceComparison({ product }: PriceComparisonProps) {
                 <tr key={`${retailerProduct.retailerId}-${index}`}>
                   <td className="retailer-name-cell">
                     <div className="retailer-name">
-                      {retailerProduct.retailerId?.name || retailerProduct.retailerName || 'Unknown Retailer'}
+                      {typeof retailerProduct.retailerId === 'object' ? retailerProduct.retailerId.name : retailerProduct.retailerName || 'Unknown Retailer'}
                     </div>
                   </td>
                   <td className="price-cell">
@@ -100,7 +108,8 @@ export function PriceComparison({ product }: PriceComparisonProps) {
                           : 'btn-secondary'
                       }`}
                       data-testid={`retailer-link-${index}`}
-                      aria-label={`${retailerProduct.availability === 'in_stock' ? 'Buy' : 'View'} product at ${retailerProduct.retailerId?.name || retailerProduct.retailerName || 'retailer'}`}
+                      aria-label={`${retailerProduct.availability === 'in_stock' ? 'Buy' : 'View'} product at ${typeof retailerProduct.retailerId === 'object' ? retailerProduct.retailerId.name : retailerProduct.retailerName || 'retailer'}`}
+                      onClick={() => handleRetailerClick(retailerProduct)}
                     >
                       {retailerProduct.availability === 'in_stock' ? 'Buy Now' : 'View'}
                     </a>

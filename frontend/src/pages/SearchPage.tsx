@@ -2,16 +2,28 @@ import { useState } from 'react';
 import { SearchFilters } from '../components/SearchFilters';
 import { SearchResults } from '../components/SearchResults';
 import { SearchBar } from '../components/SearchBar';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { SearchFilters as SearchFiltersType } from '../types';
 
 export function SearchPage() {
   const [filters, setFilters] = useState<SearchFiltersType>({});
+  const { trackSearch, trackFilterUsage } = useAnalytics();
 
   const handleSearch = (query: string) => {
     setFilters(prev => ({ ...prev, query }));
+    if (query) {
+      trackSearch(query, filters);
+    }
   };
 
   const handleFiltersChange = (newFilters: SearchFiltersType) => {
+    // Track which filters changed
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (filters[key as keyof SearchFiltersType] !== value && value) {
+        trackFilterUsage(key, String(value));
+      }
+    });
+    
     setFilters(newFilters);
   };
 

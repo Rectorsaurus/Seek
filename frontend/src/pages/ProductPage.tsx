@@ -1,10 +1,19 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useProduct } from '../hooks/useProducts';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { PriceComparison } from '../components/PriceComparison';
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useProduct(id!);
+  const { trackProductView } = useAnalytics();
+
+  useEffect(() => {
+    if (data?.data) {
+      trackProductView(data.data._id, data.data.name, data.data.brand);
+    }
+  }, [data?.data, trackProductView]);
 
   if (isLoading) {
     return (

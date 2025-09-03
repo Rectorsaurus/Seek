@@ -78,6 +78,27 @@ scrape-countrysquire:
 scrape-stats:
 	cd scraping && npm run scrape stats
 
+# Analytics commands
+.PHONY: analytics-setup analytics-start analytics-stop analytics-logs analytics-reset
+
+analytics-setup:
+	@echo "🎯 Setting up GoatCounter Analytics..."
+	@./scripts/setup-goatcounter.sh
+
+analytics-start:
+	docker compose -f docker-compose.dev.yml up -d goatcounter-db goatcounter
+
+analytics-stop:
+	docker compose -f docker-compose.dev.yml stop goatcounter goatcounter-db
+
+analytics-logs:
+	docker compose -f docker-compose.dev.yml logs -f goatcounter
+
+analytics-reset:
+	docker compose -f docker-compose.dev.yml down goatcounter goatcounter-db
+	docker volume rm seek_goatcounter_db_dev_data || true
+	make analytics-start
+
 # Testing commands
 .PHONY: test test-backend test-frontend test-scraping
 
@@ -183,6 +204,13 @@ help:
 	@echo "  make scrape-monitor   - Monitor high-priority products"
 	@echo "  make scrape-stats     - View comprehensive scraping statistics"
 	@echo ""
+	@echo "📊 Analytics:"
+	@echo "  make analytics-setup  - Set up GoatCounter analytics"
+	@echo "  make analytics-start  - Start analytics services"
+	@echo "  make analytics-stop   - Stop analytics services"
+	@echo "  make analytics-logs   - View analytics logs"
+	@echo "  make analytics-reset  - Reset analytics database"
+	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test         - Run all tests"
 	@echo "  make lint         - Run linting"
@@ -195,6 +223,7 @@ help:
 	@echo "  make clean        - Clean Docker and dependencies"
 	@echo ""
 	@echo "📚 URLs when running:"
-	@echo "  Frontend:    http://localhost:5173"
-	@echo "  Backend API: http://localhost:3001"
-	@echo "  API Health:  http://localhost:3001/api/health"
+	@echo "  Frontend:       http://localhost:5173"
+	@echo "  Backend API:    http://localhost:3001"
+	@echo "  API Health:     http://localhost:3001/api/health"
+	@echo "  Analytics:      http://localhost:8080"

@@ -78,8 +78,43 @@ services:
       - /app/dist
     restart: unless-stopped
 
+  goatcounter-db:
+    image: postgres:15
+    container_name: seek-goatcounter-db-dev
+    environment:
+      POSTGRES_DB: goatcounter
+      POSTGRES_USER: goatcounter
+      POSTGRES_PASSWORD: goatcounter_dev_password
+    volumes:
+      - goatcounter_db_dev_data:/var/lib/postgresql/data
+    networks:
+      - seek-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goatcounter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  goatcounter:
+    image: ghcr.io/arp242/goatcounter:latest
+    container_name: seek-goatcounter-dev
+    ports:
+      - "8080:8080"
+    environment:
+      GOATCOUNTER_DB: postgresql://goatcounter:goatcounter_dev_password@goatcounter-db:5432/goatcounter?sslmode=disable
+      GOATCOUNTER_LISTEN: :8080
+      GOATCOUNTER_DOMAIN: localhost:8080
+    depends_on:
+      goatcounter-db:
+        condition: service_healthy
+    networks:
+      - seek-network
+    restart: unless-stopped
+    command: ["serve", "-listen", ":8080", "-db", "postgresql://goatcounter:goatcounter_dev_password@goatcounter-db:5432/goatcounter?sslmode=disable"]
+
 volumes:
   mongodb_dev_data:
+  goatcounter_db_dev_data:
 
 networks:
   seek-network:
