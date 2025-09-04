@@ -1,16 +1,20 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AgeVerificationProvider } from './contexts/AgeVerificationContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { useAgeVerification } from './hooks/useAgeVerification';
 import { usePageTracking } from './hooks/useAnalytics';
 import { AgeVerificationModal } from './components/AgeVerificationModal';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
 import { SearchPage } from './pages/SearchPage';
 import { ProductPage } from './pages/ProductPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -50,7 +54,9 @@ function AppWithTracking() {
           <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
           <Route path="/product/:id" element={<ProtectedRoute><ProductPage /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><AdminRoute><AnalyticsPage /></AdminRoute></ProtectedRoute>} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
       </main>
       <Footer />
@@ -61,9 +67,11 @@ function AppWithTracking() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AgeVerificationProvider>
-        <AppContent />
-      </AgeVerificationProvider>
+      <AuthProvider>
+        <AgeVerificationProvider>
+          <AppContent />
+        </AgeVerificationProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

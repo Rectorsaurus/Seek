@@ -1,8 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import passport from './config/passport';
 
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
@@ -38,6 +41,24 @@ app.use(cors(corsOptions));
 // Body parsing middleware with limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// Session configuration for passport
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(logger);
 
 app.get('/api/health', (req, res) => {

@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import analyticsController from '../controllers/analyticsController';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
+
+// All analytics routes require admin authentication
+router.use(authenticateToken);
+router.use(requireRole('admin'));
 
 // Overview statistics
 router.get('/overview', analyticsController.getOverviewStats.bind(analyticsController));
